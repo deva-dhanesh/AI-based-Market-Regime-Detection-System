@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>AI-Based Market Regime Detection</title>
+
+<style>
+
+/* PAGE */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background-color: #f9fafb;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+
+/* CONTROLS TOOLBAR */
+
+.controls {
+    margin-bottom: 25px;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.controls form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input, select {
+    padding: 6px;
+}
+
+select {
+    min-width: 160px;
+}
+
+button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 7px 16px;
+}
+
+button:hover {
+    background-color: #1e40af;
+}
+
+
+/* DASHBOARD GRID */
+
+.dashboard {
+
+display: grid;
+
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+
+gap: 20px;
+
+margin-bottom: 25px;
+
+}
+
+
+/* CARD */
+
+.card {
+
+background: white;
+
+padding: 20px;
+
+border-radius: 12px;
+
+box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+transition: 0.2s;
+
+}
+
+.card:hover {
+transform: translateY(-3px);
+}
+
+.card-title {
+
+font-weight: bold;
+
+color: #64748b;
+
+margin-bottom: 10px;
+
+}
+
+
+/* REGIME BADGE */
+
+.regime-badge {
+
+padding: 8px 16px;
+
+border-radius: 20px;
+
+font-weight: bold;
+
+font-size: 18px;
+
+display: inline-block;
+
+}
+
+.bull {
+background-color: #dcfce7;
+color: #166534;
+}
+
+.bear {
+background-color: #fee2e2;
+color: #991b1b;
+}
+
+.volatile {
+background-color: #fef3c7;
+color: #92400e;
+}
+
+.neutral {
+background-color: #e0e7ff;
+color: #3730a3;
+}
+
+
+/* CONFIDENCE */
+
+.confidence-value {
+
+font-size: 24px;
+
+font-weight: bold;
+
+color: #2563eb;
+
+margin-bottom: 10px;
+
+}
+
+.progress-bar {
+
+width: 100%;
+
+height: 10px;
+
+background: #e5e7eb;
+
+border-radius: 5px;
+
+overflow: hidden;
+
+}
+
+.progress-fill {
+
+height: 100%;
+
+background: linear-gradient(90deg, #2563eb, #22c55e);
+
+}
+
+
+/* STRATEGY */
+
+.strategy-text {
+font-size: 16px;
+font-weight: bold;
+color: #0f172a;
+}
+
+
+/* EXPLANATION */
+
+.explanation-text {
+color: #334155;
+line-height: 1.5;
+}
+
+
+/* CHART */
+
+.chart-container {
+margin-top: 30px;
+}
+
+
+/* TABLE */
+
+table {
+border-collapse: collapse;
+width: 100%;
+margin-top: 15px;
+background-color: white;
+}
+
+th, td {
+border: 1px solid #ccc;
+padding: 10px;
+}
+
+th {
+background-color: #f1f5f9;
+}
+
+.highlight {
+background-color: #dbeafe;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>📈 AI-Based Market Regime Detection</h1>
+
+
+
+<!-- CONTROLS -->
+
+<div class="controls">
+
+<form method="post">
+
+<label>Stock:</label>
+
+<select name="symbol">
+{% for s in symbols %}
+<option value="{{ s }}" {% if symbol == s %}selected{% endif %}>
+{{ s }}
+</option>
+{% endfor %}
+</select>
+
+
+<label>Timeframe:</label>
+
+<select name="timeframe">
+
+<option value="1m" {% if timeframe=="1m" %}selected{% endif %}>1 Minute</option>
+<option value="5m" {% if timeframe=="5m" %}selected{% endif %}>5 Minutes</option>
+<option value="15m" {% if timeframe=="15m" %}selected{% endif %}>15 Minutes</option>
+<option value="1h" {% if timeframe=="1h" %}selected{% endif %}>1 Hour</option>
+<option value="4h" {% if timeframe=="4h" %}selected{% endif %}>4 Hours</option>
+<option value="1d" {% if timeframe=="1d" %}selected{% endif %}>1 Day</option>
+<option value="1w" {% if timeframe=="1w" %}selected{% endif %}>1 Week</option>
+<option value="1mo" {% if timeframe=="1mo" %}selected{% endif %}>1 Month</option>
+
+</select>
+
+
+<label>Start Date:</label>
+
+<input type="date" name="start_date" value="{{ start_date }}">
+
+
+<label>End Date:</label>
+
+<input type="date" name="end_date" value="{{ end_date }}">
+
+
+<button type="submit">Update</button>
+
+
+</form>
+
+</div>
+
+
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+
+<!-- REGIME -->
+
+<div class="card">
+
+<div class="card-title">Market Regime</div>
+
+<div class="regime-badge
+{% if 'Bull' in regime %}bull
+{% elif 'Bear' in regime %}bear
+{% elif 'Volatility' in regime %}volatile
+{% else %}neutral
+{% endif %}
+">
+
+{{ regime }}
+
+</div>
+
+</div>
+
+
+
+<!-- CONFIDENCE -->
+
+<div class="card">
+
+<div class="card-title">Confidence Score</div>
+
+<div class="confidence-value">
+
+{{ "%.2f"|format(confidence|default(0)) }}%
+
+</div>
+
+<div class="progress-bar">
+
+<div class="progress-fill" style="width: {{ confidence|default(0) }}%;"></div>
+
+</div>
+
+</div>
+
+
+
+<!-- STRATEGY -->
+
+<div class="card">
+
+<div class="card-title">Suggested Strategy</div>
+
+<div class="strategy-text">
+
+{{ strategy }}
+
+</div>
+
+</div>
+
+
+
+<!-- EXPLANATION -->
+
+<div class="card">
+
+<div class="card-title">AI Explanation</div>
+
+<div class="explanation-text">
+
+{{ explanation|default("No explanation available.") }}
+
+</div>
+
+</div>
+
+
+</div>
+
+
+
+<!-- CHART -->
+
+<div class="chart-container">
+
+{% if graph %}
+{{ graph | safe }}
+{% else %}
+<i>No chart data available.</i>
+{% endif %}
+
+</div>
+
+
+
+<hr>
+
+
+<h2>🧠 Regime Interpretation</h2>
+
+
+<table>
+
+<tr>
+
+<th>Regime ID</th>
+
+<th>Market Type</th>
+
+<th>Description</th>
+
+</tr>
+
+
+{% for rid, info in regime_map.items() %}
+
+<tr class="{% if current_regime_id == rid %}highlight{% endif %}">
+
+<td>{{ rid }}</td>
+
+<td><b>{{ info.name }}</b></td>
+
+<td>{{ info.description }}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+
+</body>
+
+</html>
